@@ -570,25 +570,16 @@ public:
     // Anything in the high order range of UTF-8 is assumed to not be whitespace. This isn't
     // correct, but simple, and usually works.
     static bool IsWhiteSpace( char p )					{
-        return !IsUTF8Continuation(p) && isspace( static_cast<unsigned char>(p) );
+        return !IsUTF8Continuation(p) && _chars.is_space( static_cast<unsigned char>(p) );
     }
 
     inline static bool IsNameStartChar( unsigned char ch ) {
-        if ( ch >= 128 ) {
-            // This is a heuristic guess in attempt to not implement Unicode-aware isalpha()
-            return true;
-        }
-        if ( isalpha( ch ) ) {
-            return true;
-        }
-        return ch == ':' || ch == '_';
+        return _chars.is_alpha(ch);
     }
 
     inline static bool IsNameChar( unsigned char ch ) {
-        return IsNameStartChar( ch )
-               || isdigit( ch )
-               || ch == '.'
-               || ch == '-';
+        int c = _chars.get(ch);
+        return c == UChars::IS_ALPHA || c == UChars::IS_DIGIT;
     }
 
     inline static bool IsPrefixHex( const char* p) {
@@ -643,6 +634,44 @@ public:
 private:
 	static const char* writeBoolTrue;
 	static const char* writeBoolFalse;
+	
+    struct UChars {
+        enum { IS_ALPHA = 1, IS_DIGIT = 2, IS_SPACE = 3 };
+
+        UChars() {
+            for (int i = 0; i <= 128; ++i) {
+                if (isalpha(i))
+                    _data[i] = IS_ALPHA;
+                else if (isdigit(i))
+                    _data[i] = IS_DIGIT;
+                else if (isspace(i))
+                    _data[i] = IS_SPACE;
+                else
+                    _data[i] = 0;
+            }
+            _data[':'] = _data['_'] = IS_ALPHA;
+            _data['.'] = _data['-'] = IS_DIGIT;
+
+            memset(_data + 128, IS_ALPHA, 128);
+        }
+
+        inline bool is_alpha(unsigned char c) const {
+            return _data[c] == IS_ALPHA;
+        }
+        inline bool is_space(unsigned char c) const {
+            return _data[c] == IS_SPACE;
+        }
+        inline bool is_digit(unsigned char c) const {
+            return _data[c] == IS_DIGIT;
+        }
+        inline char get(unsigned char c) const {
+            return _data[c];
+        }
+
+        char _data[256];
+    };
+
+    static const UChars _chars;
 };
 
 

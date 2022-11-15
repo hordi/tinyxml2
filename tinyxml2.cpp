@@ -394,6 +394,8 @@ const char* StrPair::GetStr()
 const char* XMLUtil::writeBoolTrue  = "true";
 const char* XMLUtil::writeBoolFalse = "false";
 
+const XMLUtil::UChars XMLUtil::_chars;
+
 void XMLUtil::SetBoolSerialization(const char* writeTrue, const char* writeFalse)
 {
 	static const char* defTrue  = "true";
